@@ -7,6 +7,7 @@ app = FastAPI(
     description="An API for managing a collection of books.",
     version="1.0.0"
 )
+
 # Include routes
 app.include_router(authors.router, prefix="/api/v1/authors", tags=["Authors"])
 app.include_router(categories.router, prefix="/api/v1/categories", tags=["Categories"])
