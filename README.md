@@ -34,7 +34,7 @@ Dự án sử dụng **Layered Architecture** với các tầng rõ ràng:
 │   │   └── category_service.py
 │   │
 │   ├── repositories/          # Repository Layer (Data Access)
-│   │   ├── base.py           # Base Repository với CRUD chung
+│   │   ├── base.py           # Base Repository với flexible query builder
 │   │   ├── author_repository.py
 │   │   ├── book_repository.py
 │   │   └── category_repository.py
@@ -49,8 +49,9 @@ Dự án sử dụng **Layered Architecture** với các tầng rõ ràng:
 │   │   ├── book.py
 │   │   └── category.py
 │   │
-│   ├── core/                  # Core configurations
-│   │   └── config.py
+│   ├── core/                  # Core configurations & utilities
+│   │   ├── config.py         # Application configuration
+│   │   └── utils.py          # Helper functions (file upload, etc.)
 │   │
 │   ├── db/                    # Database configuration
 │   │   ├── base.py
@@ -88,7 +89,39 @@ Dự án sử dụng **Layered Architecture** với các tầng rõ ràng:
 -   Truy vấn và thao tác với database
 -   Cung cấp interface trừu tượng cho data access
 -   Không chứa business logic
--   Sử dụng Base Repository Pattern
+-   Sử dụng **Flexible Query Builder Pattern**:
+    -   Hỗ trợ dynamic filtering với `filters` dict
+    -   Multiple sorting với `order_by` list
+    -   Custom query modifications với `query_modifier`
+    -   Pagination linh hoạt
+
+**Ví dụ sử dụng Base Repository:**
+
+```python
+# Simple pagination
+books = repo.get_all(db, skip=0, limit=10)
+
+# Với filters
+books = repo.get_all(
+    db,
+    filters={'author_id': 1, 'published_year': 2020}
+)
+
+# Với sorting
+books = repo.get_all(
+    db,
+    order_by=[('created_at', 'desc'), ('title', 'asc')]
+)
+
+# Kết hợp tất cả
+books = repo.get_all(
+    db,
+    skip=0,
+    limit=20,
+    filters={'author_id': 1},
+    order_by=[('published_year', 'desc')]
+)
+```
 
 ### 4. **Models Layer** (`app/models/`)
 
@@ -198,32 +231,69 @@ Sau khi chạy server, truy cập:
 
 ### Books
 
--   `GET /api/books/` - Lấy danh sách sách (pagination)
--   `GET /api/books/{id}` - Lấy thông tin sách theo ID
--   `GET /api/books/author/{author_id}` - Lấy sách theo tác giả
--   `GET /api/books/category/{category_id}` - Lấy sách theo danh mục
--   `GET /api/books/search/?keyword=...` - Tìm kiếm sách theo tên
--   `POST /api/books/` - Tạo sách mới
--   `PUT /api/books/{id}` - Cập nhật sách
--   `DELETE /api/books/{id}` - Xóa sách
+-   `GET /api/v1/books/` - Lấy danh sách sách (với filters: author_id, category_id, year, keyword)
+-   `GET /api/v1/books/{id}` - Lấy thông tin sách theo ID
+-   `GET /api/v1/books/author/{author_id}` - Lấy sách theo tác giả
+-   `GET /api/v1/books/category/{category_id}` - Lấy sách theo danh mục
+-   `GET /api/v1/books/search/?keyword=...` - Tìm kiếm sách theo tên
+-   `POST /api/v1/books/` - Tạo sách mới
+-   `POST /api/v1/books/{id}/upload-cover` - Upload ảnh bìa sách (max 5MB, jpg/png/gif/webp)
+-   `PUT /api/v1/books/{id}` - Cập nhật sách
+-   `DELETE /api/v1/books/{id}` - Xóa sách
 
 ### Authors
 
--   `GET /api/authors/` - Lấy danh sách tác giả (pagination)
--   `GET /api/authors/{id}` - Lấy thông tin tác giả theo ID
--   `GET /api/authors/search/?keyword=...` - Tìm kiếm tác giả theo tên
--   `POST /api/authors/` - Tạo tác giả mới
--   `PUT /api/authors/{id}` - Cập nhật tác giả
--   `DELETE /api/authors/{id}` - Xóa tác giả
+-   `GET /api/v1/authors/` - Lấy danh sách tác giả (pagination)
+-   `GET /api/v1/authors/{id}` - Lấy thông tin tác giả theo ID
+-   `GET /api/v1/authors/search/?keyword=...` - Tìm kiếm tác giả theo tên
+-   `POST /api/v1/authors/` - Tạo tác giả mới
+-   `PUT /api/v1/authors/{id}` - Cập nhật tác giả
+-   `DELETE /api/v1/authors/{id}` - Xóa tác giả
 
 ### Categories
 
--   `GET /api/categories/` - Lấy danh sách danh mục (pagination)
--   `GET /api/categories/{id}` - Lấy thông tin danh mục theo ID
--   `GET /api/categories/search/?keyword=...` - Tìm kiếm danh mục theo tên
--   `POST /api/categories/` - Tạo danh mục mới
--   `PUT /api/categories/{id}` - Cập nhật danh mục
--   `DELETE /api/categories/{id}` - Xóa danh mục
+-   `GET /api/v1/categories/` - Lấy danh sách danh mục (pagination)
+-   `GET /api/v1/categories/{id}` - Lấy thông tin danh mục theo ID
+-   `GET /api/v1/categories/search/?keyword=...` - Tìm kiếm danh mục theo tên
+-   `POST /api/v1/categories/` - Tạo danh mục mới
+-   `PUT /api/v1/categories/{id}` - Cập nhật danh mục
+-   `DELETE /api/v1/categories/{id}` - Xóa danh mục
+
+## Upload Ảnh Bìa Sách
+
+API hỗ trợ upload ảnh bìa sách với các tính năng:
+
+-   **Format hỗ trợ**: JPG, JPEG, PNG, GIF, WEBP
+-   **Kích thước tối đa**: 5MB
+-   **Lưu trữ**: `app/static/covers/` với tên file unique (UUID)
+-   **URL**: `/static/covers/{filename}` được lưu vào database
+
+**Ví dụ sử dụng với cURL:**
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/books/1/upload-cover" \
+  -H "accept: application/json" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@/path/to/cover.jpg"
+```
+
+**Response:**
+
+```json
+{
+    "id": 1,
+    "title": "Clean Code",
+    "cover_image": "/static/covers/abc123def456.jpg",
+    "author": {...},
+    "category": {...}
+}
+```
+
+**Truy cập ảnh:**
+
+```
+http://localhost:8000/static/covers/abc123def456.jpg
+```
 
 ## Database Migration (Alembic)
 
