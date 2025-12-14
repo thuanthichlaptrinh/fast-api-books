@@ -13,7 +13,8 @@ app.include_router(authors.router, prefix="/api/v1/authors", tags=["Authors"])
 app.include_router(categories.router, prefix="/api/v1/categories", tags=["Categories"])
 app.include_router(books.router, prefix="/api/v1/books", tags=["Books"])
 
-# Static files for covers images
+# Mount static files for serving cover images
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 @app.get("/")
 def read_root():

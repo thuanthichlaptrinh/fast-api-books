@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, UploadFile, File
 from typing import List
 from sqlalchemy.orm import Session
 
@@ -46,6 +46,21 @@ def update_book(book_id: int, book: BookUpdate, db: Session = Depends(get_db)):
 def delete_book(book_id: int, db: Session = Depends(get_db)):
     """Delete a book"""
     return book_service.delete_book(db, book_id)
+
+@router.post("/{book_id}/upload-cover", response_model=Book)
+async def upload_book_cover(
+    book_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Upload cover image for a book
+    
+    - **book_id**: ID of the book
+    - **file**: Image file (jpg, jpeg, png, gif, webp)
+    - Maximum file size: 5MB
+    """
+    return await book_service.upload_cover_image(db, book_id, file)
 
 @router.get("/author/{author_id}", response_model=List[Book])
 def get_books_by_author(author_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

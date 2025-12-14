@@ -1,9 +1,11 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile
+import os
 
 from app.repositories.book_repository import book_repository
 from app.schemas.book import BookCreate, BookUpdate
+from app.core.utils import save_upload_file, delete_file, get_file_path_from_url
 
 
 class BookService:
@@ -87,6 +89,46 @@ class BookService:
     def search_books(self, db: Session, keyword: str, skip: int = 0, limit: int = 100):
         """Search books by title keyword"""
         return self.repository.search_by_title(db, keyword, skip=skip, limit=limit)
+    
+    async def upload_cover_image(self, db: Session, book_id: int, file: UploadFile):
+        """
+        Upload cover image for a book
+        
+        Args:
+            db: Database session
+            book_id: ID of the book
+            file: Uploaded image file
+            
+        Returns:
+            Updated book with new cover image URL
+        """
+        # Check if book exists
+        book = self.repository.get_by_id(db, book_id)
+        if not book:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Book with id {book_id} not found"
+            )
+        
+        # Delete old cover image if exists
+        if book.cover_image:
+            old_file_path = get_file_path_from_url(book.cover_image)
+            delete_file(old_file_path)
+        
+        # Save new cover image
+        try:
+            file_path, url_path = await save_upload_file(file)
+            
+            # Update book with new cover image URL
+            updated_book = self.repository.update(db, book_id, {"cover_image": url_path})
+            
+            return updated_book
+            
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to upload cover image: {str(e)}"
+            )
 
 
 book_service = BookService()
