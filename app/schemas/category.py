@@ -17,7 +17,7 @@ class CategoryInDBBase(CategoryBase):
     id: int
 
     class Config:
-        orm_mode = True # Pydantic read from SQLAlchemy model instances
+        from_attributes = True  # Pydantic read from SQLAlchemy model instances
 
 class Category(CategoryInDBBase):
     """Schema return for client"""
