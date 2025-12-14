@@ -69,19 +69,41 @@ pip install "fastapi[standard]" sqlalchemy alembic python-multipart
 
 ## Chạy ứng dụng
 
-### Development mode (với auto-reload)
+### Cách 1: Sử dụng FastAPI CLI (Khuyến nghị)
+
+**Development mode (với auto-reload):**
 
 ```bash
 fastapi dev app/main.py
 ```
 
-### Production mode
+**Production mode:**
 
 ```bash
 fastapi run app/main.py
 ```
 
-API sẽ chạy tại: `http://localhost:8000`
+### Cách 2: Sử dụng Uvicorn trực tiếp
+
+**Development mode (với auto-reload):**
+
+```bash
+uvicorn app.main:app --reload
+```
+
+**Production mode:**
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+**Chạy với port tùy chỉnh:**
+
+```bash
+uvicorn app.main:app --reload --port 8080
+```
+
+API sẽ chạy tại: `http://localhost:8000` (hoặc port bạn chỉ định)
 
 ## API Documentation
 
