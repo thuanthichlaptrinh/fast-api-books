@@ -1,13 +1,15 @@
 from pydantic import BaseModel
 from datetime import datetime
 
+from app.schemas.author import Author
+from app.schemas.category import Category
+
 class BookBase(BaseModel):
     title: str
     description: str | None = None
     published_year: int
     author_id: int
     category_id: int
-    cover_image: str | None = None
 
 class BookCreate(BookBase):
     """Schema for creating a new book"""
@@ -24,12 +26,19 @@ class BookUpdate(BaseModel):
 
 class BookInDBBase(BookBase):
     id: int
+    description: str | None = None
+    published_year: int
+    author_id: int
+    category_id: int
+    cover_image: str | None = None
     created_at: datetime
     updated_at: datetime
 
     class Config:
         from_attributes = True
 
+# Schema nested for author and category
 class Book(BookInDBBase):
     """Schema return for client"""
-    pass
+    author: Author
+    category: Category

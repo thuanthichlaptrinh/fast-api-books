@@ -16,15 +16,18 @@ class BookService:
         """Get a single book by ID"""
         book = self.repository.get_by_id(db, book_id)
         if not book:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Book with id {book_id} not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Book with id {book_id} not found")
         return book
     
-    def get_books(self, db: Session, skip: int = 0, limit: int = 100):
+    def get_books(self, db: Session, skip: int = 0, limit: int = 100, author_id: Optional[int] = None, category_id: Optional[int] = None, year: Optional[int] = None, keyword: Optional[str] = None):
         """Get all books with pagination"""
-        return self.repository.get_all(db, skip=skip, limit=limit, order_by="created_at", desc_order=True)
+        return self.repository.get_all(
+            db, 
+            skip=skip, 
+            limit=limit, 
+            filters={"author_id": author_id, "category_id": category_id, "year": year, "keyword": keyword}, 
+            order_by=[("created_at", "desc")]
+        )
     
     def create_book(self, db: Session, book_in: BookCreate):
         """Create a new book"""
